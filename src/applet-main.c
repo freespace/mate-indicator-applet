@@ -203,6 +203,29 @@ struct _incoming_position_t {
 	gboolean found;
 };
 
+static gint
+panel_icon_size()
+{
+	// if done too early gtk_settings_get_default will not return a g_object
+	gchar *icon_sizes, *ptr, *end;
+	gint pxsize = 22;
+
+	g_object_get(G_OBJECT(gtk_settings_get_default()), "gtk-icon-sizes", &icon_sizes, NULL);
+	printf("%s\n", icon_sizes);
+	ptr = g_strstr_len(icon_sizes, strlen(icon_sizes), "panel-menu-bar");
+	if (ptr) {
+		while(*ptr && *ptr != '=') ptr += 1;
+		if (*ptr && *(ptr+1)) {
+			ptr += 1;
+			end = ptr;
+			while(*end && *end != ',') end += 1;
+			*end = '\0';
+			sscanf(ptr, "%d", &pxsize);
+		}
+	}
+
+	return pxsize;
+}
 /* This function helps by determining where in the menu list
    this new entry should be placed.  It compares the objects
    that they're on, and then the individual entries.  Each
@@ -344,6 +367,7 @@ entry_added (IndicatorObject * io, IndicatorObjectEntry * entry, GtkWidget * men
 	g_signal_connect(G_OBJECT(menuitem), "scroll-event", G_CALLBACK(entry_scrolled), entry);
 
 	if (entry->image != NULL) {
+		gtk_image_set_pixel_size(entry->image, panel_icon_size());
 		gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(entry->image), FALSE, FALSE, 1);
 		if (gtk_widget_get_visible(GTK_WIDGET(entry->image))) {
 			something_visible = TRUE;
